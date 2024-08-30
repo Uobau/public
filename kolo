@@ -1,0 +1,72 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import minimize
+
+# Funkcja obliczająca promień i środek najlepiej dopasowanego okręgu
+def fit_circle(x, y):
+    def calc_R(c):
+        Ri = np.sqrt((x - c[0])**2 + (y - c[1])**2)
+        return Ri - Ri.mean()
+
+    center_estimate = np.mean(x), np.mean(y)
+    center = minimize(lambda c: np.sum(calc_R(c)**2), center_estimate).x
+    Ri = np.sqrt((x - center[0])**2 + (y - center[1])**2)
+    R = Ri.mean()
+    return center, R
+
+# Funkcja obliczająca odchylenia od idealnego okręgu
+def deviations_from_circle(x, y, center, R):
+    distances = np.sqrt((x - center[0])**2 + (y - center[1])**2)
+    deviations = distances - R
+    return deviations
+
+# Funkcja generująca dane testowe dla półokręgu z szumem
+def generate_test_data(num_points, radius=1, noise_level=0.05):
+    angles = np.linspace(0, np.pi, num_points)
+    x = radius * np.cos(angles)
+    y = radius * np.sin(angles)
+    # Dodanie szumu do danych
+    x += np.random.normal(0, noise_level, num_points)
+    y += np.random.normal(0, noise_level, num_points)
+    return x, y
+
+# Funkcja do wizualizacji danych i dopasowanego okręgu
+def plot_circle(x, y, center, R):
+    fig, ax = plt.subplots()
+    
+    # Punkty danych
+    ax.scatter(x, y, s=1, color='blue', label='Dane')
+    
+    # Dopasowany okrąg
+    theta = np.linspace(0, 2*np.pi, 1000)
+    circle_x = center[0] + R * np.cos(theta)
+    circle_y = center[1] + R * np.sin(theta)
+    ax.plot(circle_x, circle_y, color='red', label='Dopasowany okrąg')
+
+    # Środek okręgu
+    ax.scatter(center[0], center[1], color='green', marker='x', label='Środek okręgu')
+    
+    # Ustawienia wykresu
+    ax.set_aspect('equal', 'box')
+    plt.title('Dopasowanie okręgu do półokręgu')
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    plt.legend()
+    plt.show()
+
+# Generowanie danych testowych
+x, y = generate_test_data(4000)
+
+# Dopasowanie okręgu
+center, R = fit_circle(x, y)
+
+# Obliczenie odchyleń
+deviations = deviations_from_circle(x, y, center, R)
+
+# Wyświetlenie wyników
+print(f"Środek okręgu: {center}")
+print(f"Promień okręgu: {R}")
+print(f"Średnie odchylenie od idealnego półokręgu: {np.mean(np.abs(deviations))}")
+
+# Wizualizacja
+plot_circle(x, y, center, R)
